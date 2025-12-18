@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Plus, Filter, Download, ChevronDown } from 'lucide-react';
+import { Plus, Filter, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { initialBanks } from './services/mockData';
 import { Bank, BankFilter, ProgramFilter, ToastMessage } from './types';
 import { Button } from './components/ui/Button';
@@ -22,34 +23,33 @@ const PREDEFINED_BANKS = [
   { name: 'Росбанк', logo: '' },
 ];
 
+const BANKS_PER_PAGE = 6;
+
 const App: React.FC = () => {
-  // --- State ---
   const [banks, setBanks] = useState<Bank[]>(initialBanks);
   
-  // Filters
   const [applyToAll, setApplyToAll] = useState(true);
+  const [usePromoPrice, setUsePromoPrice] = useState(false);
+  const [respectLimits, setRespectLimits] = useState(true);
+  const [isCapitalCity, setIsCapitalCity] = useState(false);
+
   const [selectedBankId, setSelectedBankId] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<BankFilter>('all');
   const [programFilter, setProgramFilter] = useState<ProgramFilter>('all');
+  
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Modals
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingBank, setEditingBank] = useState<Bank | null>(null);
-  const [formModalInitialTab, setFormModalInitialTab] = useState<'general' | 'programs'>('general');
+  const [formModalInitialTab, setFormModalInitialTab] = useState<'general' | 'programs' | 'none'>('none');
   
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [bankToDelete, setBankToDelete] = useState<Bank | null>(null);
 
-  // Dropdown menu state
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const addMenuRef = useRef<HTMLDivElement>(null);
-
-  // Toasts
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // --- Logic ---
-
-  // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (addMenuRef.current && !addMenuRef.current.contains(event.target as Node)) {
@@ -60,6 +60,11 @@ const App: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Сбрасываем страницу на 1 при изменении любых фильтров
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedBankId, statusFilter, programFilter]);
+
   const addToast = (type: 'success' | 'error' | 'info', message: string) => {
     const id = Date.now().toString();
     setToasts(prev => [...prev, { id, type, message }]);
@@ -69,16 +74,13 @@ const App: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  // Filtered Banks
   const filteredBanks = useMemo(() => {
     return banks.filter(bank => {
       const matchesBank = selectedBankId === 'all' ? true : bank.id === selectedBankId;
-      
       const matchesStatus = statusFilter === 'all' 
         ? true 
         : statusFilter === 'active' ? bank.isActive 
         : !bank.isActive;
-
       const matchesPrograms = programFilter === 'all'
         ? true
         : programFilter === 'with_programs' ? bank.programs.length > 0
@@ -88,27 +90,29 @@ const App: React.FC = () => {
     });
   }, [banks, selectedBankId, statusFilter, programFilter]);
 
-  // Handlers
+  // Пагинация
+  const totalPages = Math.ceil(filteredBanks.length / BANKS_PER_PAGE);
+  const paginatedBanks = useMemo(() => {
+    const startIndex = (currentPage - 1) * BANKS_PER_PAGE;
+    return filteredBanks.slice(startIndex, startIndex + BANKS_PER_PAGE);
+  }, [filteredBanks, currentPage]);
+
+  const availablePredefinedBanks = useMemo(() => {
+    return PREDEFINED_BANKS.filter(pb => !banks.some(b => b.name === pb.name));
+  }, [banks]);
+
   const handleAddBankSelect = (bankName: string) => {
     setIsAddMenuOpen(false);
-    
-    // Create a template for the selected bank
+    const predefined = PREDEFINED_BANKS.find(b => b.name === bankName);
     const newBank: Bank = {
         id: Date.now().toString(),
-        name: bankName === 'custom' ? '' : bankName,
-        logo: '',
+        name: bankName,
+        logo: predefined?.logo || '',
         description: '',
         isActive: true,
         autoRates: false,
         programs: []
     };
-
-    // Find predefined logo if exists
-    if (bankName !== 'custom') {
-        const predefined = PREDEFINED_BANKS.find(b => b.name === bankName);
-        if (predefined?.logo) newBank.logo = predefined.logo;
-    }
-
     setEditingBank(newBank);
     setFormModalInitialTab('general');
     setIsFormModalOpen(true);
@@ -143,14 +147,12 @@ const App: React.FC = () => {
     setBanks(prev => {
         const index = prev.findIndex(b => b.id === savedBank.id);
         if (index >= 0) {
-            // Update existing
             const newBanks = [...prev];
             newBanks[index] = savedBank;
-            addToast('success', `Банк "${savedBank.name}" успешно обновлен.`);
+            addToast('success', `Данные банка "${savedBank.name}" сохранены.`);
             return newBanks;
         } else {
-            // Add new
-            addToast('success', `Банк "${savedBank.name}" успешно добавлен.`);
+            addToast('success', `Банк "${savedBank.name}" добавлен в список.`);
             return [savedBank, ...prev];
         }
     });
@@ -158,20 +160,17 @@ const App: React.FC = () => {
 
   const handleToggleStatus = (bank: Bank, status: boolean) => {
     setBanks(prev => prev.map(b => b.id === bank.id ? { ...b, isActive: status } : b));
-    addToast('info', `Банк "${bank.name}" теперь ${status ? 'Активен' : 'Неактивен'}.`);
+    addToast('info', `Банк "${bank.name}" ${status ? 'активирован' : 'деактивирован'}.`);
   };
 
   const handleMoveBank = (bank: Bank, direction: 'up' | 'down') => {
     setBanks(prev => {
         const index = prev.findIndex(b => b.id === bank.id);
         if (index === -1) return prev;
-        
         const newBanks = [...prev];
         if (direction === 'up' && index > 0) {
-            // Swap with previous
             [newBanks[index - 1], newBanks[index]] = [newBanks[index], newBanks[index - 1]];
         } else if (direction === 'down' && index < newBanks.length - 1) {
-             // Swap with next
              [newBanks[index + 1], newBanks[index]] = [newBanks[index], newBanks[index + 1]];
         }
         return newBanks;
@@ -180,123 +179,86 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-900 bg-white">
-      
-      {/* Main Content */}
       <main className="flex-1 p-8 max-w-[1600px] mx-auto w-full">
-        
-        {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Настройки банков</h1>
-            <p className="text-gray-500 mt-1">Управление банками-партнерами и ипотечными программами для калькулятора.</p>
+            <p className="text-gray-500 mt-1">Управление программами кредитования для всех проектов.</p>
           </div>
           
           <div className="relative" ref={addMenuRef}>
-            <Button 
-                onClick={() => setIsAddMenuOpen(!isAddMenuOpen)} 
-                icon={<Plus size={18} />}
-                className="pr-3"
-            >
+            <Button onClick={() => setIsAddMenuOpen(!isAddMenuOpen)} icon={<Plus size={18} />} className="pr-3">
                 Добавить банк
                 <ChevronDown size={16} className={`ml-2 transition-transform ${isAddMenuOpen ? 'rotate-180' : ''}`} />
             </Button>
-            
             {isAddMenuOpen && (
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-fade-in-up">
                     <div className="py-2">
-                        <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                            Выберите банк
-                        </div>
-                        {PREDEFINED_BANKS.map((bank) => (
-                            <div
-                                key={bank.name}
-                                onClick={() => handleAddBankSelect(bank.name)}
-                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-3 cursor-pointer"
-                            >
-                                {bank.logo ? (
-                                    <img src={bank.logo} alt="" className="w-6 h-6 object-contain" />
-                                ) : (
-                                    <div className="w-6 h-6 bg-gray-100 rounded-full" />
-                                )}
+                        <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Доступные банки</div>
+                        {availablePredefinedBanks.length > 0 ? (
+                          availablePredefinedBanks.map((bank) => (
+                            <div key={bank.name} onClick={() => handleAddBankSelect(bank.name)} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-3 cursor-pointer">
+                                {bank.logo ? <img src={bank.logo} alt="" className="w-6 h-6 object-contain" /> : <div className="w-6 h-6 bg-gray-100 rounded-full" />}
                                 {bank.name}
                             </div>
-                        ))}
-                        <div className="border-t border-gray-100 my-1"></div>
-                        <div
-                            onClick={() => handleAddBankSelect('custom')}
-                            className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer"
-                        >
-                            Другой банк...
-                        </div>
+                          ))
+                        ) : (
+                          <div className="px-4 py-2 text-xs text-gray-400 italic text-center">Все доступные банки добавлены</div>
+                        )}
                     </div>
                 </div>
             )}
           </div>
         </div>
 
-        {/* Filters Toolbar */}
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                
-                {/* Switch */}
-                <div>
-                     <Switch 
-                        checked={applyToAll} 
-                        onChange={setApplyToAll} 
-                        label="Применить ко всем проектам" 
-                     />
+            <div className="flex flex-col gap-5">
+                <div className="flex flex-wrap items-center gap-x-10 gap-y-4">
+                    <Switch 
+                      checked={usePromoPrice} 
+                      onChange={setUsePromoPrice} 
+                      label={usePromoPrice ? "Расчет ипотеки от акционной стоимости" : "Расчет ипотеки от стоимости"} 
+                    />
+                    <Switch checked={respectLimits} onChange={setRespectLimits} label="Учитывать лимиты по ипотеке" />
                 </div>
-
-                {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto items-center">
-                    <div className="flex items-center gap-2 mr-2 whitespace-nowrap self-start sm:self-center">
-                        <Filter size={16} className="text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">Фильтры:</span>
-                    </div>
-
-                    <div className="UNI_select w-full sm:w-48">
-                        <select 
-                        value={selectedBankId}
-                        onChange={(e) => setSelectedBankId(e.target.value)}
-                        >
-                        <option value="all">Все банки</option>
-                        {banks.map(bank => (
-                            <option key={bank.id} value={bank.id}>{bank.name}</option>
-                        ))}
-                        </select>
-                        <div className="fake"></div>
-                    </div>
-                    
-                    <div className="UNI_select w-full sm:w-48">
-                        <select 
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value as BankFilter)}
-                        >
-                        <option value="all">Все статусы</option>
-                        <option value="active">Только активные</option>
-                        <option value="inactive">Только неактивные</option>
-                        </select>
-                        <div className="fake"></div>
-                    </div>
-
-                    <div className="UNI_select w-full sm:w-48">
-                        <select 
-                        value={programFilter}
-                        onChange={(e) => setProgramFilter(e.target.value as ProgramFilter)}
-                        >
-                        <option value="all">Все программы</option>
-                        <option value="with_programs">С программами</option>
-                        <option value="no_programs">Без программ</option>
-                        </select>
-                        <div className="fake"></div>
-                    </div>
+                <div className="pt-5 border-t border-gray-100 flex flex-wrap items-center gap-x-10 gap-y-4">
+                    <Switch checked={isCapitalCity} onChange={setIsCapitalCity} label="ЖК находится в МСК или СПБ" />
+                    <Switch checked={applyToAll} onChange={setApplyToAll} label="Применить ко всем проектам" />
                 </div>
             </div>
         </div>
 
-        {/* Table Area */}
+        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">
+            <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2 mr-2">
+                    <Filter size={16} className="text-gray-500" />
+                    <span className="text-sm font-medium text-gray-700">Фильтры:</span>
+                </div>
+                <div className="UNI_select w-full sm:w-72">
+                    <select value={selectedBankId} onChange={(e) => setSelectedBankId(e.target.value)}>
+                        <option value="all">Все банки</option>
+                        {banks.map(bank => <option key={bank.id} value={bank.id}>{bank.name}</option>)}
+                    </select>
+                </div>
+                <div className="UNI_select w-full sm:w-72">
+                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as BankFilter)}>
+                        <option value="all">Все статусы</option>
+                        <option value="active">Активные</option>
+                        <option value="inactive">Неактивные</option>
+                    </select>
+                </div>
+                <div className="UNI_select w-full sm:w-72">
+                    <select value={programFilter} onChange={(e) => setProgramFilter(e.target.value as ProgramFilter)}>
+                        <option value="all">Все программы</option>
+                        <option value="with_programs">С программами</option>
+                        <option value="no_programs">Без программ</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <BankTable 
-          banks={filteredBanks} 
+          banks={paginatedBanks} 
           onEdit={handleEditBank}
           onDelete={handleDeleteClick}
           onToggleStatus={handleToggleStatus}
@@ -304,21 +266,49 @@ const App: React.FC = () => {
           onMove={handleMoveBank}
         />
 
+        {/* Пагинация (если больше 6 банков) */}
+        {totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-center gap-4">
+                <button 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-primary hover:border-primary disabled:opacity-30 disabled:hover:border-gray-200 disabled:hover:text-gray-500 transition-all"
+                >
+                    <ChevronLeft size={20} />
+                </button>
+                <div className="flex items-center gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                                currentPage === page 
+                                    ? 'bg-primary text-white shadow-md' 
+                                    : 'bg-white border border-gray-200 text-gray-600 hover:border-primary hover:text-primary'
+                            }`}
+                        >
+                            {page}
+                        </button>
+                    ))}
+                </div>
+                <button 
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-primary hover:border-primary disabled:opacity-30 disabled:hover:border-gray-200 disabled:hover:text-gray-500 transition-all"
+                >
+                    <ChevronRight size={20} />
+                </button>
+            </div>
+        )}
       </main>
 
-      {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-6 px-8 mt-auto">
-         <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500">
-            <p>
-              Настройки влияют на расчеты на страницах квартир мгновенно. Последнее обновление: {new Date().toLocaleDateString()}
-            </p>
-            <Button variant="outline" size="sm" icon={<Download size={16}/>}>
-              Экспорт настроек (JSON)
-            </Button>
+         <div className="max-w-[1600px] mx-auto flex justify-between items-center text-sm text-gray-500">
+            <p>Последнее обновление конфигурации: {new Date().toLocaleDateString()}</p>
+            <p>© 2025 Административная панель управления</p>
          </div>
       </footer>
 
-      {/* Modals */}
       <BankFormModal 
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
@@ -332,12 +322,9 @@ const App: React.FC = () => {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={confirmDelete}
         title="Удалить банк?"
-        message={`Вы уверены, что хотите удалить "${bankToDelete?.name}"? Это также удалит все связанные ипотечные программы. Это действие нельзя отменить.`}
+        message={`Вы уверены, что хотите удалить "${bankToDelete?.name}"? Это также удалит все связанные программы.`}
       />
-
-      {/* Toast Notification Container */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-
     </div>
   );
 };
