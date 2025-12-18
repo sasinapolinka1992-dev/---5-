@@ -260,9 +260,9 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
                         </div>
                         
                         <div className="p-8">
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                                {/* Левая колонка */}
-                                <div className="lg:col-span-8 space-y-8">
+                            <div className="flex flex-col gap-10">
+                                {/* Секция параметров */}
+                                <div className="space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                         <div className={program.autoRates ? "opacity-60" : ""}>
                                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5"><Percent size={12}/> Ставка (%)</label>
@@ -347,10 +347,10 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
                                     </div>
                                 </div>
 
-                                {/* Правая колонка */}
-                                <div className="lg:col-span-4 space-y-8">
-                                    <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 space-y-4">
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Действует</label>
+                                {/* Секция выбора помещений — теперь всегда снизу */}
+                                <div className="pt-8 border-t border-gray-100 flex justify-center">
+                                    <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 space-y-4 w-full max-w-2xl">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Действует</label>
                                         <Button 
                                             variant="primary" 
                                             className="w-full shadow-sm py-4 text-base"
