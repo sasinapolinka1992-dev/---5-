@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, Grip, ArrowDown, ArrowRight } from 'lucide-react';
 import { Button } from './ui/Button';
@@ -7,7 +8,7 @@ interface UnitSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (selectedIds: string[]) => void;
-  initialSelection?: string[]; // Если undefined или пустой массив при открытии, считаем что выбрано всё
+  initialSelection?: string[];
 }
 
 export const UnitSelectionModal: React.FC<UnitSelectionModalProps> = ({
@@ -18,176 +19,144 @@ export const UnitSelectionModal: React.FC<UnitSelectionModalProps> = ({
 }) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   
-  // При открытии инициализируем состояние
   useEffect(() => {
     if (isOpen) {
       if (initialSelection && initialSelection.length > 0) {
         setSelectedIds(new Set(initialSelection));
       } else {
-        // Если ничего не передано или массив пуст, по дефолту выбираем ВСЁ (так как "действует на все")
-        const allIds = mockBuilding.units.map(u => u.id);
-        setSelectedIds(new Set(allIds));
+        setSelectedIds(new Set(mockBuilding.units.map(u => u.id)));
       }
     }
   }, [isOpen, initialSelection]);
 
   const toggleUnit = (id: string) => {
     const newSet = new Set(selectedIds);
-    if (newSet.has(id)) {
-      newSet.delete(id);
-    } else {
-      newSet.add(id);
-    }
+    if (newSet.has(id)) newSet.delete(id); else newSet.add(id);
     setSelectedIds(newSet);
   };
 
-  const toggleFloor = (floor: number) => {
-    const unitsOnFloor = mockBuilding.units.filter(u => u.floor === floor);
+  const toggleFloorInSection = (floor: number, section: number) => {
+    const unitsOnFloor = mockBuilding.units.filter(u => u.floor === floor && u.section === section);
     const allSelected = unitsOnFloor.every(u => selectedIds.has(u.id));
-    
     const newSet = new Set(selectedIds);
-    unitsOnFloor.forEach(u => {
-      if (allSelected) newSet.delete(u.id);
-      else newSet.add(u.id);
-    });
+    unitsOnFloor.forEach(u => allSelected ? newSet.delete(u.id) : newSet.add(u.id));
     setSelectedIds(newSet);
   };
 
-  const toggleRiser = (riser: number) => {
-    const unitsInRiser = mockBuilding.units.filter(u => u.riser === riser);
+  const toggleRiserInSection = (riser: number, section: number) => {
+    const unitsInRiser = mockBuilding.units.filter(u => u.riser === riser && u.section === section);
     const allSelected = unitsInRiser.every(u => selectedIds.has(u.id));
-
     const newSet = new Set(selectedIds);
-    unitsInRiser.forEach(u => {
-      if (allSelected) newSet.delete(u.id);
-      else newSet.add(u.id);
-    });
+    unitsInRiser.forEach(u => allSelected ? newSet.delete(u.id) : newSet.add(u.id));
     setSelectedIds(newSet);
   };
 
-  const selectAll = () => {
-    const allIds = mockBuilding.units.map(u => u.id);
-    setSelectedIds(new Set(allIds));
-  };
-
-  const deselectAll = () => {
-    setSelectedIds(new Set());
-  };
+  const selectAll = () => setSelectedIds(new Set(mockBuilding.units.map(u => u.id)));
+  const deselectAll = () => setSelectedIds(new Set());
 
   const handleSave = () => {
-    // Если выбраны все квартиры, возвращаем пустой массив (семантика "Все")
-    if (selectedIds.size === mockBuilding.units.length) {
-      onSave([]);
-    } else {
-      onSave(Array.from(selectedIds));
-    }
+    if (selectedIds.size === mockBuilding.units.length) onSave([]);
+    else onSave(Array.from(selectedIds));
     onClose();
   };
 
   if (!isOpen) return null;
 
-  const totalUnits = mockBuilding.units.length;
-  const selectedCount = selectedIds.size;
-
-  // Группируем квартиры по этажам для рендеринга
-  const floors = Array.from({ length: mockBuilding.floors }, (_, i) => mockBuilding.floors - i); // [12, 11, ... 1]
+  const sections = Array.from({ length: mockBuilding.sectionsCount }, (_, i) => i + 1);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-hidden">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col animate-fade-in-up">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Grip className="text-primary" />
-              Выбор помещений
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Выберите квартиры, на которые распространяется ипотечная программа
-            </p>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-white overflow-hidden animate-fade-in-up">
+      <div className="w-full h-full flex flex-col bg-white">
+        {/* Шапка */}
+        <div className="flex items-center justify-between px-6 py-3 border-b shrink-0 bg-white z-30 shadow-sm">
+          <div className="flex items-center gap-3">
+            <Grip className="text-primary" size={20} /> 
+            <h2 className="text-lg font-bold text-gray-900 leading-none">Выбор помещений</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X size={24} />
-          </button>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors active:scale-95"><X size={24} className="text-gray-400" /></button>
         </div>
 
-        {/* Toolbar */}
-        <div className="px-6 py-3 bg-gray-50 border-b flex justify-between items-center shrink-0">
-           <div className="text-sm font-medium text-gray-700">
-             Выбрано: <span className="text-primary font-bold">{selectedCount}</span> из {totalUnits}
+        {/* Панель управления */}
+        <div className="px-6 py-2 bg-gray-50 border-b flex justify-between items-center shrink-0 z-30">
+           <div className="text-xs font-semibold text-gray-700 bg-white px-3 py-1.5 rounded-lg border shadow-sm">
+             Выбрано: <span className="text-primary font-bold">{selectedIds.size}</span> из {mockBuilding.units.length}
            </div>
            <div className="flex gap-2">
-             <Button variant="outline" size="sm" onClick={deselectAll}>Снять выделение</Button>
-             <Button variant="outline" size="sm" onClick={selectAll}>Выбрать все</Button>
+             <Button variant="outline" size="sm" onClick={deselectAll} className="h-8 py-0 text-xs px-3">Снять всё</Button>
+             <Button variant="outline" size="sm" onClick={selectAll} className="h-8 py-0 text-xs px-3">Выбрать всё</Button>
            </div>
         </div>
 
-        {/* Grid (Chessboard) */}
-        <div className="flex-1 overflow-auto p-6 bg-gray-100 flex justify-center">
-            <div className="inline-block bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                
-                {/* Header Row (Risers) */}
-                <div className="flex mb-2">
-                    <div className="w-12 mr-2"></div> {/* Spacer for floor labels */}
-                    {Array.from({ length: mockBuilding.unitsPerFloor }, (_, i) => i + 1).map(riser => (
-                        <button 
-                            key={riser}
-                            onClick={() => toggleRiser(riser)}
-                            className="w-16 h-8 flex items-center justify-center text-xs text-gray-500 hover:text-primary hover:bg-blue-50 rounded mb-1 mx-1 transition-colors border border-transparent hover:border-blue-100"
-                            title="Выбрать весь стояк"
-                        >
-                            <ArrowDown size={14} className="mr-1"/> Ст.{riser}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Rows (Floors) */}
-                {floors.map(floor => (
-                    <div key={floor} className="flex items-center mb-2">
-                         {/* Floor Label */}
-                        <button 
-                            onClick={() => toggleFloor(floor)}
-                            className="w-12 h-10 flex items-center justify-center text-sm font-bold text-gray-400 hover:text-primary hover:bg-blue-50 rounded mr-2 transition-colors border border-transparent hover:border-blue-100"
-                            title="Выбрать весь этаж"
-                        >
-                            {floor} <ArrowRight size={12} className="ml-1"/>
-                        </button>
-
-                        {/* Units */}
-                        {Array.from({ length: mockBuilding.unitsPerFloor }, (_, i) => i + 1).map(riser => {
-                            const unit = mockBuilding.units.find(u => u.floor === floor && u.riser === riser);
-                            if (!unit) return <div key={`${floor}-${riser}`} className="w-16 h-10 mx-1"></div>;
-                            
-                            const isSelected = selectedIds.has(unit.id);
-
-                            return (
-                                <div 
-                                    key={unit.id}
-                                    onClick={() => toggleUnit(unit.id)}
-                                    className={`
-                                        w-16 h-10 mx-1 rounded border cursor-pointer flex flex-col items-center justify-center transition-all select-none
-                                        ${isSelected 
-                                            ? 'bg-primary border-primary text-white shadow-md transform scale-105 z-10' 
-                                            : 'bg-white border-gray-200 text-gray-500 hover:border-primary hover:text-primary hover:bg-blue-50'}
-                                    `}
-                                    title={`Кв. ${unit.number}, ${unit.rooms} комн., ${unit.area} м²`}
-                                >
-                                    <span className="text-xs font-bold leading-none">{unit.number}</span>
-                                    <span className={`text-[10px] leading-none mt-0.5 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}>
-                                        {unit.rooms}к
-                                    </span>
+        {/* Шахматка */}
+        <div className="flex-1 overflow-auto bg-gray-50/30">
+            <div className="p-6 min-h-full flex items-end">
+                <div className="inline-flex gap-6 items-end pb-8">
+                    {sections.map(sectionId => {
+                        const sectionHeight = mockBuilding.sectionHeights[sectionId - 1];
+                        const sectionFloors = Array.from({ length: sectionHeight }, (_, i) => sectionHeight - i);
+                        
+                        return (
+                            <div key={sectionId} className="flex flex-col bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow self-end overflow-hidden">
+                                {/* Прилипающий заголовок секции и стояков */}
+                                <div className="sticky top-0 bg-white z-20 border-b p-3 shadow-sm">
+                                    <div className="text-center font-black text-gray-400 mb-2 uppercase tracking-widest text-[9px]">Секция {sectionId}</div>
+                                    <div className="flex">
+                                        <div className="w-8 mr-1"></div>
+                                        {Array.from({ length: mockBuilding.unitsPerFloor }, (_, i) => i + 1).map(riser => (
+                                            <button 
+                                                key={riser} 
+                                                onClick={() => toggleRiserInSection(riser, sectionId)} 
+                                                className="w-20 h-6 flex items-center justify-center text-[8px] font-bold text-gray-400 hover:text-primary hover:bg-blue-50 rounded mx-0.5 transition-colors border border-transparent hover:border-blue-100 uppercase"
+                                            >
+                                                Ст.{riser}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            );
-                        })}
-                    </div>
-                ))}
+
+                                {/* Сетка квартир */}
+                                <div className="flex flex-col p-3 pt-4">
+                                    {sectionFloors.map(floor => (
+                                        <div key={floor} className="flex items-center mb-1.5">
+                                            <button 
+                                                onClick={() => toggleFloorInSection(floor, sectionId)} 
+                                                title={`Выбрать этаж ${floor}`}
+                                                className="w-8 h-8 flex items-center justify-center text-[10px] font-black text-gray-300 hover:text-primary hover:bg-gray-50 rounded-md transition-all border border-transparent hover:border-gray-200 mr-1"
+                                            >
+                                                {floor}
+                                            </button>
+
+                                            {Array.from({ length: mockBuilding.unitsPerFloor }, (_, i) => i + 1).map(riser => {
+                                                const unit = mockBuilding.units.find(u => u.floor === floor && u.riser === riser && u.section === sectionId);
+                                                if (!unit) return <div key={`${floor}-${riser}`} className="w-20 h-12 mx-0.5"></div>;
+                                                const isSelected = selectedIds.has(unit.id);
+                                                return (
+                                                    <div 
+                                                        key={unit.id} 
+                                                        onClick={() => toggleUnit(unit.id)} 
+                                                        className={`w-20 h-12 mx-0.5 rounded-lg border-2 cursor-pointer flex flex-col items-center justify-center transition-all select-none ${isSelected ? 'bg-primary border-primary text-white shadow-md scale-105 z-10' : 'bg-white border-gray-100 text-gray-500 hover:border-primary hover:bg-blue-50'}`}
+                                                    >
+                                                        <span className="text-[12px] font-black leading-none">{unit.number}</span>
+                                                        <span className={`text-[9px] mt-1 font-medium whitespace-nowrap ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}>
+                                                            {unit.rooms}К • {Math.round(unit.area)} м²
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 shrink-0 rounded-b-xl">
-          <Button variant="secondary" onClick={onClose}>Отмена</Button>
-          <Button onClick={handleSave} icon={<CheckCircle size={18}/>}>Применить</Button>
+        {/* Подвал */}
+        <div className="px-6 py-3 border-t bg-white flex justify-end gap-3 shrink-0 shadow-sm z-30">
+          <Button variant="secondary" onClick={onClose} className="px-6 h-10 text-sm">Отмена</Button>
+          <Button onClick={handleSave} className="px-8 h-10 text-sm font-black">Подтвердить выбор</Button>
         </div>
       </div>
     </div>
