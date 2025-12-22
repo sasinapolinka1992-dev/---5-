@@ -1,26 +1,33 @@
+
 import { Bank, BuildingSection, HousingUnit } from '../types';
 
-// Генератор шахматки для демонстрации
 const generateMockBuilding = (): BuildingSection => {
-  const floors = 12;
-  const unitsPerFloor = 6;
+  const unitsPerFloor = 4;
+  const sectionsCount = 6;
+  // Массив высот для каждой секции
+  const sectionHeights = [12, 16, 10, 14, 8, 11];
+  const maxFloors = Math.max(...sectionHeights);
   const units: HousingUnit[] = [];
 
-  for (let f = 1; f <= floors; f++) {
-    for (let r = 1; r <= unitsPerFloor; r++) {
-      units.push({
-        id: `f${f}_r${r}`,
-        number: `${(f - 1) * unitsPerFloor + r}`,
-        floor: f,
-        riser: r,
-        rooms: r <= 2 ? 1 : r <= 4 ? 2 : 3, // 1-2 однушки, 3-4 двушки, 5-6 трешки
-        area: 35 + Math.random() * 50,
-        price: 5000000 + Math.random() * 5000000
-      });
+  for (let s = 1; s <= sectionsCount; s++) {
+    const currentSectionHeight = sectionHeights[s - 1];
+    for (let f = 1; f <= currentSectionHeight; f++) {
+      for (let r = 1; r <= unitsPerFloor; r++) {
+        units.push({
+          id: `s${s}_f${f}_r${r}`,
+          number: `${s}${(f).toString().padStart(2, '0')}${r}`,
+          floor: f,
+          riser: r,
+          section: s,
+          rooms: r === 1 ? 1 : r === 2 ? 2 : 3,
+          area: 35 + Math.random() * 50,
+          price: 5000000 + Math.random() * 5000000
+        });
+      }
     }
   }
 
-  return { floors, unitsPerFloor, units };
+  return { floors: maxFloors, sectionHeights, unitsPerFloor, units, sectionsCount };
 };
 
 export const mockBuilding = generateMockBuilding();
@@ -30,9 +37,9 @@ export const initialBanks: Bank[] = [
     id: '1',
     name: 'Сбербанк',
     logo: 'https://companieslogo.com/img/orig/SBER.ME-1004a469.png?t=1720244493',
-    description: 'Крупнейший банк страны с широким спектром ипотечных продуктов.',
+    description: 'Внутреннее описание Сбербанка.',
     isActive: true,
-    autoRates: true,
+    autoRates: false,
     programs: [
       {
         id: 'p1',
@@ -43,55 +50,19 @@ export const initialBanks: Bank[] = [
         minDownPayment: 20,
         pskMin: 6.1,
         pskMax: 7.5,
-        conditions: 'Программа для семей с детьми. Требуется подтверждение дохода и наличие ребенка, рожденного после 2018 года.',
-        specialConditions: true,
-        autoRates: true,
-      },
-      {
-        id: 'p2',
-        name: 'Стандартная ипотека',
-        rate: 16.5,
-        minTerm: 1,
-        maxTerm: 30,
-        minDownPayment: 15,
-        pskMin: 16.8,
-        pskMax: 18.2,
-        conditions: 'Базовая программа на покупку готового или строящегося жилья без субсидий.',
-        specialConditions: false,
+        conditions: 'Программа для семей с детьми.',
         autoRates: false,
-      },
+        targetUnits: [],
+      }
     ],
   },
   {
     id: '2',
     name: 'ВТБ',
     logo: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/VTB_Logo_2018_color.png',
-    description: 'Выгодные ставки на новостройки от партнеров.',
+    description: 'Внутреннее описание ВТБ.',
     isActive: true,
     autoRates: false,
-    programs: [
-      {
-        id: 'p3',
-        name: 'IT ипотека',
-        rate: 5.0,
-        minTerm: 1,
-        maxTerm: 30,
-        minDownPayment: 15,
-        pskMin: 5.1,
-        pskMax: 6.0,
-        conditions: 'Льготная программа для сотрудников аккредитованных IT-компаний. Возраст от 22 до 50 лет.',
-        specialConditions: true,
-        autoRates: false,
-      },
-    ],
-  },
-  {
-    id: '3',
-    name: 'Альфа-Банк',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Alfa-Bank_logo_2008_2.svg/1200px-Alfa-Bank_logo_2008_2.svg.png',
-    description: 'Гибкие условия для предпринимателей и самозанятых.',
-    isActive: false,
-    autoRates: false,
     programs: [],
-  },
+  }
 ];
