@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, CheckCircle, Zap, Grid3X3, AlertCircle, FileText, Calendar, Percent } from 'lucide-react';
+import { X, Plus, Trash2, CheckCircle, Zap, ZapOff, Grid3X3, FileText, Calendar, Percent, Info } from 'lucide-react';
 import { Bank, MortgageProgram } from '../types';
 import { Button } from './ui/Button';
 import { Switch } from './ui/Switch';
 import { UnitSelectionModal } from './UnitSelectionModal';
+import { TooltipIcon } from '../App';
 
 interface BankFormModalProps {
   isOpen: boolean;
@@ -37,7 +38,6 @@ const emptyProgram: MortgageProgram = {
   pskMin: 0,
   pskMax: 0,
   conditions: '',
-  specialConditions: false,
   autoRates: false,
   targetUnits: [],
 };
@@ -70,13 +70,7 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
-        const data = JSON.parse(JSON.stringify(initialData)) as Bank;
-        // Если банк не поддерживает автоставки, принудительно выключаем их у программ
-        if (NO_AUTO_RATES_BANKS.includes(data.name)) {
-          data.autoRates = false;
-          data.programs = data.programs.map(p => ({ ...p, autoRates: false }));
-        }
-        setFormData(data);
+        setFormData(JSON.parse(JSON.stringify(initialData)));
       } else {
         setFormData({ ...emptyBank, id: Date.now().toString() });
       }
@@ -107,22 +101,12 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
         
         if (field === 'autoRates' && value === true) {
            if (updatedProgram.name.includes('Семейная')) {
-             updatedProgram.rate = 6;
-             updatedProgram.minDownPayment = 20;
-             updatedProgram.pskMin = 6.2;
-             updatedProgram.pskMax = 7.1;
+             updatedProgram.rate = 6; updatedProgram.minDownPayment = 20;
            } else if (updatedProgram.name.includes('IT')) {
-             updatedProgram.rate = 5;
-             updatedProgram.minDownPayment = 15;
-             updatedProgram.pskMin = 5.2;
-             updatedProgram.pskMax = 5.8;
+             updatedProgram.rate = 5; updatedProgram.minDownPayment = 15;
            } else {
              updatedProgram.rate = 18.5;
-             updatedProgram.pskMin = 18.9;
-             updatedProgram.pskMax = 22.4;
            }
-           updatedProgram.minTerm = 1;
-           updatedProgram.maxTerm = 30;
         }
         return updatedProgram;
       });
@@ -162,9 +146,9 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
     <>
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col animate-fade-in-up">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
           <h2 className="text-xl font-bold text-gray-900">{initialData ? 'Редактирование банка' : 'Добавление банка'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={24} /></button>
         </div>
 
         <div className="flex px-6 border-b bg-gray-50 shrink-0">
@@ -175,6 +159,13 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50/30">
           {activeTab === 'general' ? (
             <div className="space-y-6 max-w-5xl bg-white p-8 rounded-xl border border-gray-200 shadow-sm mx-auto">
+              {!bankSupportsAutoRates && (
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg flex items-center gap-3 mb-4">
+                  <ZapOff className="text-amber-500 shrink-0" size={20} />
+                  <p className="text-amber-800 text-sm font-medium">Банк не подключен к системе автоставок. Все параметры программ редактируются вручную.</p>
+                </div>
+              )}
+              
               <div className="flex gap-8">
                 <div className="flex-shrink-0">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Логотип</label>
@@ -189,31 +180,13 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Описание банка</label>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  Описание банка
+                  <TooltipIcon text="Для внутреннего пользования. В ипотечном калькуляторе не отображается." />
+                </label>
                 <textarea name="description" value={formData.description || ''} onChange={handleGeneralChange} rows={8} className="UNI_input" placeholder="Дополнительная информация о банке..." />
               </div>
               
-              <div className={`p-6 rounded-xl border ${!bankSupportsAutoRates ? 'bg-gray-100 border-gray-200 opacity-60' : 'bg-blue-50 border-blue-100 shadow-sm'}`}>
-                 <div className="flex items-center justify-between">
-                     <div className="pr-4">
-                        <div className={`font-semibold flex items-center gap-2 ${!bankSupportsAutoRates ? 'text-gray-500' : 'text-blue-900'}`}>
-                           <Zap size={20} /> Автоставки банка
-                        </div>
-                        <p className={`text-xs mt-1.5 ${!bankSupportsAutoRates ? 'text-gray-400' : 'text-blue-700'}`}>
-                           {!bankSupportsAutoRates 
-                             ? 'Для этого банка автоматическое получение ставок недоступно.' 
-                             : 'Включает возможность автообновления для всех программ этого банка.'}
-                        </p>
-                     </div>
-                     <div className={!bankSupportsAutoRates ? 'pointer-events-none' : ''}>
-                        <Switch 
-                          checked={formData.autoRates && bankSupportsAutoRates} 
-                          onChange={(val) => setFormData(prev => ({ ...prev, autoRates: val }))} 
-                        />
-                     </div>
-                 </div>
-              </div>
-
               <div className="pt-6 border-t border-gray-100">
                 <Switch 
                   checked={formData.isActive} 
@@ -230,149 +203,105 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
                         <Percent size={40} />
                     </div>
                     <p className="text-gray-500 mb-6 font-medium text-lg">У банка еще нет ипотечных программ.</p>
-                    <Button onClick={addProgram} icon={<Plus size={20}/>} className="px-8 py-3">Добавить первую программу</Button>
+                    <Button onClick={addProgram} className="px-8 py-3">Добавить первую программу</Button>
                  </div>
               ) : (
                 <div className="space-y-6">
-                  {formData.programs.map((program, index) => (
-                    <div key={program.id} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden group">
-                        {/* Header программы */}
-                        <div className="bg-gray-50/80 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <span className="w-9 h-9 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-sm font-bold text-gray-400">{index + 1}</span>
-                                <div className="flex flex-col gap-1">
-                                    {/* Переключатель автоставок ПЕРЕНЕСЕН НАД СЕЛЕКТОМ и увеличен */}
-                                    {formData.autoRates && bankSupportsAutoRates && (
-                                        <div className="flex items-center gap-3 mb-2 scale-110 origin-left">
-                                            <Zap size={16} className={program.autoRates ? 'text-blue-500' : 'text-gray-400'} />
-                                            <span className="text-xs font-bold text-gray-600 uppercase tracking-tight">Автоставки:</span>
-                                            <Switch checked={program.autoRates} onChange={(val) => updateProgram(program.id, 'autoRates', val)} />
+                  {formData.programs.map((program, index) => {
+                    const isAutoEnabled = bankSupportsAutoRates && program.autoRates;
+                    
+                    return (
+                      <div key={program.id} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden group">
+                          <div className="bg-gray-50/80 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                  <span className="w-9 h-9 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-sm font-bold text-gray-400">{index + 1}</span>
+                                  <div className="flex flex-col gap-1">
+                                      {bankSupportsAutoRates && (
+                                          <div className="flex items-center gap-3 mb-2 scale-110 origin-left">
+                                              <Zap size={16} className={program.autoRates ? 'text-blue-500' : 'text-gray-400'} />
+                                              <span className="text-xs font-bold text-gray-600 uppercase tracking-tight">Автоставки:</span>
+                                              <Switch checked={program.autoRates} onChange={(val) => updateProgram(program.id, 'autoRates', val)} />
+                                          </div>
+                                      )}
+                                      {!bankSupportsAutoRates && (
+                                        <div className="flex items-center gap-1.5 mb-2 text-gray-400">
+                                            <ZapOff size={14} />
+                                            <span className="text-[10px] font-bold uppercase tracking-wider">Ручной ввод</span>
                                         </div>
-                                    )}
-                                    <div className="UNI_select w-96">
-                                        <select value={program.name} onChange={(e) => updateProgram(program.id, 'name', e.target.value)} className="bg-white h-11 py-0 font-medium text-gray-900">
-                                            {PROGRAM_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <button onClick={() => removeProgram(program.id)} className="p-2.5 text-gray-400 hover:text-danger hover:bg-red-50 rounded-lg transition-colors" title="Удалить программу"><Trash2 size={22} /></button>
-                        </div>
-                        
-                        <div className="p-8">
-                            <div className="flex flex-col gap-10">
-                                {/* Секция параметров */}
-                                <div className="space-y-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                        <div className={program.autoRates ? "opacity-60" : ""}>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5"><Percent size={12}/> Ставка (%)</label>
-                                            <input 
-                                              type="number" 
-                                              step="0.1" 
-                                              value={program.rate} 
-                                              onChange={(e) => updateProgram(program.id, 'rate', parseFloat(e.target.value))} 
-                                              className={`UNI_input h-11 ${program.autoRates ? 'bg-gray-100 cursor-not-allowed' : ''}`} 
-                                              disabled={program.autoRates} 
-                                            />
-                                        </div>
-                                        <div className={program.autoRates ? "opacity-60" : ""}>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5">Мин. взнос (%)</label>
-                                            <input 
-                                              type="number" 
-                                              value={program.minDownPayment} 
-                                              onChange={(e) => updateProgram(program.id, 'minDownPayment', parseFloat(e.target.value))} 
-                                              className={`UNI_input h-11 ${program.autoRates ? 'bg-gray-100 cursor-not-allowed' : ''}`} 
-                                              disabled={program.autoRates} 
-                                            />
-                                        </div>
-                                        <div className={program.autoRates ? "opacity-60" : ""}>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5"><Calendar size={12}/> Срок (лет)</label>
-                                            <div className="flex items-center gap-2">
-                                                <input 
-                                                  type="number" 
-                                                  value={program.minTerm} 
-                                                  onChange={(e) => updateProgram(program.id, 'minTerm', parseInt(e.target.value))} 
-                                                  className={`UNI_input h-11 ${program.autoRates ? 'bg-gray-100 cursor-not-allowed' : ''}`} 
-                                                  placeholder="От" 
-                                                  disabled={program.autoRates}
-                                                />
-                                                <span className="text-gray-400">до</span>
-                                                <input 
-                                                  type="number" 
-                                                  value={program.maxTerm} 
-                                                  onChange={(e) => updateProgram(program.id, 'maxTerm', parseInt(e.target.value))} 
-                                                  className={`UNI_input h-11 ${program.autoRates ? 'bg-gray-100 cursor-not-allowed' : ''}`} 
-                                                  placeholder="До" 
-                                                  disabled={program.autoRates}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
+                                      )}
+                                      <div className="UNI_select w-96">
+                                          <select value={program.name} onChange={(e) => updateProgram(program.id, 'name', e.target.value)} className="bg-white h-11 py-0 font-medium text-gray-900">
+                                              {PROGRAM_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                                          </select>
+                                      </div>
+                                  </div>
+                              </div>
+                              <button onClick={() => removeProgram(program.id)} className="p-2.5 text-gray-400 hover:text-danger hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={22} /></button>
+                          </div>
+                          
+                          <div className="p-8">
+                              <div className="flex flex-col gap-10">
+                                  <div className="space-y-8">
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                          <div className={isAutoEnabled ? "opacity-60" : ""}>
+                                              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5"><Percent size={12}/> Ставка (%)</label>
+                                              <input type="number" step="0.1" value={program.rate} onChange={(e) => updateProgram(program.id, 'rate', parseFloat(e.target.value))} className={`UNI_input h-11 ${isAutoEnabled ? 'bg-gray-100' : ''}`} disabled={isAutoEnabled} />
+                                          </div>
+                                          <div className={isAutoEnabled ? "opacity-60" : ""}>
+                                              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5">Мин. взнос (%)</label>
+                                              <input type="number" value={program.minDownPayment} onChange={(e) => updateProgram(program.id, 'minDownPayment', parseFloat(e.target.value))} className={`UNI_input h-11 ${isAutoEnabled ? 'bg-gray-100' : ''}`} disabled={isAutoEnabled} />
+                                          </div>
+                                          <div className={isAutoEnabled ? "opacity-60" : ""}>
+                                              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5"><Calendar size={12}/> Срок (лет)</label>
+                                              <div className="flex items-center gap-2">
+                                                  <input type="number" value={program.minTerm} onChange={(e) => updateProgram(program.id, 'minTerm', parseInt(e.target.value))} className={`UNI_input h-11 ${isAutoEnabled ? 'bg-gray-100' : ''}`} placeholder="От" disabled={isAutoEnabled}/>
+                                                  <span className="text-gray-400">до</span>
+                                                  <input type="number" value={program.maxTerm} onChange={(e) => updateProgram(program.id, 'maxTerm', parseInt(e.target.value))} className={`UNI_input h-11 ${isAutoEnabled ? 'bg-gray-100' : ''}`} placeholder="До" disabled={isAutoEnabled}/>
+                                              </div>
+                                          </div>
+                                      </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2">
-                                        <div className={program.autoRates ? "opacity-60" : ""}>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5">ПСК (от - до %)</label>
-                                            <div className="flex items-center gap-2">
-                                                <input 
-                                                  type="number" 
-                                                  step="0.01" 
-                                                  value={program.pskMin || 0} 
-                                                  onChange={(e) => updateProgram(program.id, 'pskMin', parseFloat(e.target.value))} 
-                                                  className={`UNI_input h-11 ${program.autoRates ? 'bg-gray-100 cursor-not-allowed' : ''}`} 
-                                                  placeholder="От" 
-                                                  disabled={program.autoRates} 
-                                                />
-                                                <input 
-                                                  type="number" 
-                                                  step="0.01" 
-                                                  value={program.pskMax || 0} 
-                                                  onChange={(e) => updateProgram(program.id, 'pskMax', parseFloat(e.target.value))} 
-                                                  className={`UNI_input h-11 ${program.autoRates ? 'bg-gray-100 cursor-not-allowed' : ''}`} 
-                                                  placeholder="До" 
-                                                  disabled={program.autoRates} 
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="flex items-end pb-3">
-                                            <div className="flex items-center bg-gray-50 px-4 py-2.5 rounded-lg border border-gray-100 w-full md:w-auto">
-                                                <input type="checkbox" id={`special-${program.id}`} checked={program.specialConditions} onChange={(e) => updateProgram(program.id, 'specialConditions', e.target.checked)} className="h-4.5 w-4.5 text-primary border-gray-300 rounded focus:ring-primary cursor-pointer" />
-                                                <label htmlFor={`special-${program.id}`} className="ml-3 block text-sm font-semibold text-gray-700 cursor-pointer">Особые условия (дисклеймер)</label>
-                                            </div>
-                                        </div>
-                                    </div>
+                                      <div className="grid grid-cols-1 md:grid-cols-1 gap-8 pt-2">
+                                          <div className={isAutoEnabled ? "opacity-60" : ""}>
+                                              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5">ПСК (от - до %)</label>
+                                              <div className="flex items-center gap-2 max-w-md">
+                                                  <input type="number" step="0.01" value={program.pskMin || 0} onChange={(e) => updateProgram(program.id, 'pskMin', parseFloat(e.target.value))} className={`UNI_input h-11 ${isAutoEnabled ? 'bg-gray-100' : ''}`} placeholder="От" disabled={isAutoEnabled} />
+                                                  <input type="number" step="0.01" value={program.pskMax || 0} onChange={(e) => updateProgram(program.id, 'pskMax', parseFloat(e.target.value))} className={`UNI_input h-11 ${isAutoEnabled ? 'bg-gray-100' : ''}`} placeholder="До" disabled={isAutoEnabled} />
+                                              </div>
+                                          </div>
+                                      </div>
 
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5"><FileText size={12}/> Особые условия (описание)</label>
-                                        <textarea value={program.conditions || ''} onChange={(e) => updateProgram(program.id, 'conditions', e.target.value)} rows={4} className="UNI_input p-4" placeholder="Укажите подробности: требования к заемщику, страховки и т.д." />
-                                    </div>
-                                </div>
+                                      <div>
+                                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5"><FileText size={12}/> Особые условия (дисклеймер)</label>
+                                          <textarea value={program.conditions || ''} onChange={(e) => updateProgram(program.id, 'conditions', e.target.value)} rows={4} className="UNI_input p-4" placeholder="Укажите подробности: требования к заемщику, страховки и т.д." />
+                                      </div>
+                                  </div>
 
-                                {/* Секция выбора помещений — теперь всегда снизу */}
-                                <div className="pt-8 border-t border-gray-100 flex justify-center">
-                                    <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 space-y-4 w-full max-w-2xl">
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Действует</label>
-                                        <Button 
-                                            variant="primary" 
-                                            className="w-full shadow-sm py-4 text-base"
-                                            onClick={() => openUnitSelection(program.id)}
-                                            icon={<Grid3X3 size={22} />}
-                                        >
-                                            {program.targetUnits && program.targetUnits.length > 0 
-                                                ? `Выбрано: ${program.targetUnits.length} пом.` 
-                                                : 'Все помещения ЖК'}
-                                        </Button>
-                                        <p className="text-[11px] text-gray-400 text-center px-4 leading-relaxed">
-                                            {(!program.targetUnits || program.targetUnits.length === 0) 
-                                                ? 'Программа по умолчанию действует на весь проект' 
-                                                : 'Выбраны конкретные квартиры в шахматке'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                  ))}
-                  <Button onClick={addProgram} variant="outline" className="w-full border-dashed py-6 bg-white text-gray-500 font-semibold text-lg hover:border-primary hover:text-primary transition-all" icon={<Plus size={24}/>}>Добавить еще одну программу</Button>
+                                  <div className="pt-8 border-t border-gray-100 flex justify-center">
+                                      <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 space-y-4 w-full">
+                                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Действует</label>
+                                          <Button 
+                                              variant="primary" 
+                                              className="w-full shadow-sm py-4 text-base font-semibold"
+                                              onClick={() => openUnitSelection(program.id)}
+                                          >
+                                              {program.targetUnits && program.targetUnits.length > 0 
+                                                  ? `Выбрано: ${program.targetUnits.length} помещений` 
+                                                  : 'Все помещения ЖК'}
+                                          </Button>
+                                          <p className="text-[11px] text-gray-400 text-center px-4 leading-relaxed">
+                                              {(!program.targetUnits || program.targetUnits.length === 0) 
+                                                  ? 'Программа по умолчанию действует на весь проект' 
+                                                  : 'Выбраны конкретные квартиры в шахматке'}
+                                          </p>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                    );
+                  })}
+                  <Button onClick={addProgram} variant="outline" className="w-full border-dashed py-6 bg-white text-gray-500 font-semibold text-lg hover:border-primary hover:text-primary transition-all">Добавить еще одну программу</Button>
                 </div>
               )}
             </div>
@@ -381,7 +310,7 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
 
         <div className="px-6 py-5 border-t bg-white flex justify-end gap-3 rounded-b-xl shrink-0">
           <Button variant="secondary" onClick={onClose} className="px-8 h-12">Отмена</Button>
-          <Button onClick={handleSubmit} icon={<CheckCircle size={20}/>} className="px-8 h-12">Сохранить все изменения</Button>
+          <Button onClick={handleSubmit} className="px-10 h-12 font-bold">Сохранить все изменения</Button>
         </div>
       </div>
     </div>
@@ -390,4 +319,3 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
     </>
   );
 };
-
