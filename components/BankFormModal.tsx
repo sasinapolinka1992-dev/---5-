@@ -5,7 +5,7 @@ import { Bank, MortgageProgram, HistoryEntry } from '../types';
 import { Button } from './ui/Button';
 import { Switch } from './ui/Switch';
 import { UnitSelectionModal } from './UnitSelectionModal';
-import { TooltipIcon } from '../App';
+import { TooltipIcon, isSberbank } from '../App';
 
 interface BankFormModalProps {
   isOpen: boolean;
@@ -105,6 +105,8 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
 
   if (!isOpen) return null;
 
+  const isBankAutoRatesDisabled = !formData.autoRates;
+
   return (
     <>
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 text-[12px]">
@@ -124,7 +126,7 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
         <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar flex flex-col">
           {activeTab === 'general' ? (
             <div className="max-w-3xl mx-auto w-full space-y-8">
-               {!formData.autoRates && (
+               {isBankAutoRatesDisabled && (
                   <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg flex items-center gap-3 text-amber-800 text-[12px] font-medium">
                     <ZapOff size={18} className="text-amber-500" />
                     <span>Банк не подключен к системе автоставок. Все параметры программ редактируются вручную.</span>
@@ -187,7 +189,7 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
                     <div key={program.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:border-gray-200 transition-all">
                       <div className="bg-gray-50/80 px-8 py-6 flex flex-col gap-6 border-b">
                         
-                        {formData.name !== 'Сбербанк' && (
+                        {!isSberbank(formData.name) && (
                            <div className="flex items-center justify-between pb-4 border-b border-gray-200/50">
                               <div className="flex items-center gap-3">
                                  <div className={`p-1.5 rounded-lg ${program.autoRates ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
