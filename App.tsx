@@ -372,7 +372,10 @@ const App: React.FC = () => {
             onSelectBank={toggleSelectBank}
             onEdit={(b) => { setEditingBank(b); setIsFormModalOpen(true); }} 
             onDelete={(b) => { setBankToDelete(b); setIsDeleteModalOpen(true); }} 
-            onToggleStatus={(bank, status) => setBanks(prev => prev.map(b => b.id === bank.id ? { ...b, isActive: status } : b))} 
+            onToggleStatus={(bank, status) => {
+              setBanks(prev => prev.map(b => b.id === bank.id ? { ...b, isActive: status } : b));
+              addToast('success', `Статус банка "${bank.name}" обновлен`);
+            }} 
             onAddProgram={(b) => { setEditingBank(b); setIsFormModalOpen(true); }} 
             onMove={(bank, dir) => {
               setBanks(prev => {
@@ -390,6 +393,7 @@ const App: React.FC = () => {
                   }
                   return n;
               });
+              addToast('info', 'Порядок банков изменен');
             }} 
           />
         </div>
@@ -405,11 +409,14 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <BankFormModal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} onSave={(saved) => setBanks(prev => {
-          const i = prev.findIndex(b => b.id === saved.id);
-          if (i >= 0) { const n = [...prev]; n[i] = saved; return n; }
-          return [saved, ...prev];
-      })} initialData={editingBank} />
+      <BankFormModal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} onSave={(saved) => {
+          setBanks(prev => {
+              const i = prev.findIndex(b => b.id === saved.id);
+              if (i >= 0) { const n = [...prev]; n[i] = saved; return n; }
+              return [saved, ...prev];
+          });
+          addToast('success', 'Изменения в данных банка сохранены');
+      }} initialData={editingBank} />
 
       <ConfirmationModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={() => {
           setBanks(prev => prev.filter(b => b.id !== bankToDelete?.id));
