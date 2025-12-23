@@ -93,14 +93,14 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
 
   const getSelectionSummary = (targetUnits: Record<string, string[]>) => {
     const projectKeys = Object.keys(targetUnits);
-    if (projectKeys.length === 0) return 'Выбрать проект и помещения';
+    if (projectKeys.length === 0) return 'Выбрать ЖК и помещения';
     
     const activeProjects = projectKeys.filter(k => targetUnits[k].length > 0);
     const totalUnits = Object.values(targetUnits).reduce((acc, units) => acc + units.length, 0);
 
-    if (activeProjects.length === 0) return 'Выбрать проект и помещения';
+    if (activeProjects.length === 0) return 'Выбрать ЖК и помещения';
     
-    return `Выбрано ${activeProjects.length} проектов, ${totalUnits} помещений`;
+    return `Выбрано ${activeProjects.length} ЖК, ${totalUnits} помещений`;
   };
 
   if (!isOpen) return null;
@@ -219,7 +219,9 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
                             </div>
                           </div>
                           <div className="flex items-center gap-2 ml-4">
-                            <Button variant="ghost" size="sm" onClick={() => duplicateProgram(program)} className="h-9 px-3 text-gray-400 hover:text-primary hover:bg-white border border-transparent hover:border-blue-100 font-bold text-[11px] uppercase tracking-wider"><Copy size={14} className="mr-1.5" /> Дублировать</Button>
+                            <Button variant="ghost" size="sm" onClick={() => duplicateProgram(program)} className="h-9 px-3 text-gray-400 hover:text-primary hover:bg-white border border-transparent hover:border-blue-100 font-bold text-[11px] uppercase tracking-wider">
+                              <Copy size={14} className="mr-1.5" /> Копировать
+                            </Button>
                             <Button variant="ghost" size="sm" onClick={() => setFormData(prev => ({ ...prev, programs: prev.programs.filter(p => p.id !== program.id)}))} className="h-9 w-9 p-0 text-gray-300 hover:text-danger hover:bg-white rounded-lg"><Trash2 size={16} /></Button>
                           </div>
                         </div>
@@ -284,7 +286,7 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
                            </Button>
                            <div className="flex items-center gap-2 text-gray-400">
                               <Info size={12} />
-                              <span className="text-[11px] font-bold italic">По умолчанию действует на все проекты и помещения</span>
+                              <span className="text-[11px] font-bold italic">По умолчанию действует на все ЖК и помещения</span>
                            </div>
                         </div>
                       </div>
