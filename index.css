@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -18,6 +19,7 @@ font-weight: 500;
 transition: background-color 0.2s;
 user-select: none;
 font-size: 14px;
+outline: none;
 }
 .UNI_button:hover {
 background-color: #5588bb;
@@ -108,7 +110,7 @@ padding-left: 36px;
 padding-right: 36px;
 }
 
-/* Checkbox (Switch) - ВОТ ЭТО ОТВЕЧАЕТ ЗА ПЕРЕКЛЮЧАТЕЛИ */
+/* Checkbox (Switch) */
 .UNI_checkbox {
 position: relative;
 display: inline-block;
@@ -159,52 +161,93 @@ width: 100%;
 .UNI_select select {
 width: 100%;
 padding: 10px 12px;
-padding-right: 30px; /* Space for arrow */
+padding-right: 34px;
 border: 1px solid #EAEAEA;
-border-radius: 6px;
+border-radius: 8px;
 background-color: white;
 font-size: 14px;
 appearance: none;
 -webkit-appearance: none;
 outline: none;
 cursor: pointer;
+transition: all 0.2s;
 }
 .UNI_select select:focus {
 border-color: #6699CC;
+box-shadow: 0 0 0 4px rgba(102, 153, 204, 0.1);
 }
 .UNI_select .fake {
 position: absolute;
-right: 12px;
+right: 14px;
 top: 50%;
 transform: translateY(-50%);
 pointer-events: none;
-font-size: 10px;
-color: #666;
+color: #94A3B8;
+transition: transform 0.2s;
 }
-.UNI_select:after {
-content: '';
-position: absolute;
-right: 14px;
-top: 50%;
-margin-top: -3px;
-border-left: 5px solid transparent;
-border-right: 5px solid transparent;
-border-top: 5px solid #666;
-pointer-events: none;
+.UNI_select select:focus + .fake {
+transform: translateY(-50%) rotate(180deg);
+color: #6699CC;
 }
 
 /* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+width: 10px;
+height: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+background: transparent; 
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+background: #CBD5E1; 
+border-radius: 10px;
+border: 2px solid transparent;
+background-clip: padding-box;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+background: #94A3B8; 
+border: 2px solid transparent;
+background-clip: padding-box;
+}
+
+.scrollbar-thick::-webkit-scrollbar {
+width: 14px;
+height: 14px;
+}
+.scrollbar-thick::-webkit-scrollbar-thumb {
+background: #94A3B8;
+border: 3px solid #f1f5f9; /* Contrast border to make it pop */
+}
+
+.scrollbar-extra-thick::-webkit-scrollbar {
+width: 24px;
+height: 24px;
+}
+.scrollbar-extra-thick::-webkit-scrollbar-track {
+background: #f1f5f9;
+border-radius: 12px;
+}
+.scrollbar-extra-thick::-webkit-scrollbar-thumb {
+background: #94A3B8;
+border-radius: 12px;
+border: 6px solid #f1f5f9;
+}
+.scrollbar-extra-thick::-webkit-scrollbar-thumb:hover {
+background: #64748b;
+}
+
+/* Fix for standard scrollbars */
 ::-webkit-scrollbar {
 width: 8px;
 height: 8px;
 }
 ::-webkit-scrollbar-track {
-background: #f1f1f1; 
+background: #F8FAFC; 
 }
 ::-webkit-scrollbar-thumb {
-background: #ccc; 
+background: #E2E8F0; 
 border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-background: #b3b3b3; 
+background: #CBD5E1; 
 }
