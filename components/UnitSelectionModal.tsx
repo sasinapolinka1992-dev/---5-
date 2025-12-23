@@ -81,7 +81,7 @@ export const UnitSelectionModal: React.FC<UnitSelectionModalProps> = ({
     setSelections(prev => {
       const newSet = new Set(prev[projectId]);
       const someSelected = riserUnits.some(u => newSet.has(u.id));
-      riserUnits.forEach(u => someSelected ? newSet.delete(u.id) : newSet.add(u.id));
+       riserUnits.forEach(u => someSelected ? newSet.delete(u.id) : newSet.add(u.id));
       return { ...prev, [projectId]: newSet };
     });
   };
@@ -106,7 +106,7 @@ export const UnitSelectionModal: React.FC<UnitSelectionModalProps> = ({
         
         <div className="w-72 border-r bg-gray-50 flex flex-col shrink-0 z-20">
           <div className="p-6 border-b bg-white">
-            <h2 className="text-lg font-black text-gray-900 flex items-center gap-2 uppercase tracking-tighter"><Building2 size={20} className="text-primary" /> Проекты</h2>
+            <h2 className="text-lg font-black text-gray-900 flex items-center gap-2 uppercase tracking-tighter"><Building2 size={20} className="text-primary" /> Каталог</h2>
             <div className="mt-4 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={14}/>
               <input type="text" value={projectSearch} onChange={e => setProjectSearch(e.target.value)} placeholder="Поиск ЖК..." className="UNI_input h-9 text-[12px] pl-9 bg-gray-50 font-bold border-gray-100"/>
