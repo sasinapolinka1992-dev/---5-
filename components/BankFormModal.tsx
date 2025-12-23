@@ -43,6 +43,7 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
   const [activeTab, setActiveTab] = useState<'general' | 'programs'>(initialTab);
   const [formData, setFormData] = useState<Bank>({ id: '', name: '', isActive: true, autoRates: true, programs: [], history: [] });
   const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
+  const [currentProjectForUnits, setCurrentProjectForUnits] = useState<string | null>(null);
   const [currentProgramIdForUnits, setCurrentProgramIdForUnits] = useState<string | null>(null);
 
   useEffect(() => {
@@ -186,7 +187,7 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
           ) : (
             <div className="flex-1 flex flex-col min-h-0">
               {formData.programs.length > 0 ? (
-                <div className="space-y-12">
+                <div className="space-y-12 pb-10">
                   <div className="space-y-8">
                     {formData.programs.map((program, idx) => (
                       <div key={program.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:border-gray-200 transition-all">
@@ -299,17 +300,15 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
                     ))}
                   </div>
                   
-                  {/* Redesigned Add Program Button - Clean Action Style */}
+                  {/* Bottom Add Program Button - Matching the "Add first program" style */}
                   <div className="flex justify-center pt-8">
-                    <button 
+                    <Button 
                       onClick={addDefaultProgram} 
-                      className="group flex items-center gap-3 px-10 py-5 bg-white border-2 border-primary/20 text-primary rounded-2xl font-black text-[14px] uppercase tracking-widest shadow-lg shadow-blue-500/5 hover:bg-primary hover:text-white hover:border-primary hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300 active:scale-95"
+                      className="h-11 px-10 font-black text-[12px] uppercase tracking-widest shadow-xl shadow-primary/30 rounded-lg flex items-center gap-2"
                     >
-                      <div className="w-8 h-8 rounded-full bg-primary/10 group-hover:bg-white/20 flex items-center justify-center transition-colors">
-                        <Plus size={20} className="stroke-[3]" />
-                      </div>
+                      <Plus size={16} />
                       Добавить новую программу
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (
@@ -318,7 +317,8 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
                      <Percent size={40} />
                    </div>
                    <p className="text-base font-bold text-gray-500 mb-8">У банка еще нет ипотечных программ.</p>
-                   <Button onClick={addDefaultProgram} className="h-11 px-8 font-black text-[12px] uppercase tracking-widest shadow-xl shadow-primary/30 rounded-lg">
+                   <Button onClick={addDefaultProgram} className="h-11 px-8 font-black text-[12px] uppercase tracking-widest shadow-xl shadow-primary/30 rounded-lg flex items-center gap-2">
+                      <Plus size={16} />
                       Добавить первую программу
                    </Button>
                 </div>
