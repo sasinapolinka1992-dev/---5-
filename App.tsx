@@ -10,6 +10,14 @@ import { BankFormModal } from './components/BankFormModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { ToastContainer } from './components/Toast';
 
+// Вспомогательная функция для надежной проверки на Сбербанк
+export const isSberbank = (name: string) => {
+  if (!name) return false;
+  const normalized = name.toLowerCase().trim();
+  // Проверяем как кириллическую 'с', так и возможную латинскую 'c' (ошибка раскладки)
+  return normalized === 'сбербанк' || normalized === 'sberbank' || normalized === 'cбербанк';
+};
+
 const PREDEFINED_BANKS = [
   { name: 'Сбербанк', logo: 'https://companieslogo.com/img/orig/SBER.ME-1004a469.png?t=1720244493' },
   { name: 'ВТБ', logo: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/VTB_Logo_2018_color.png' },
@@ -262,7 +270,15 @@ const App: React.FC = () => {
                                     }
                                     setIsAddMenuOpen(false);
                                     setAddBankSearch('');
-                                    setEditingBank({ id: Date.now().toString(), name: bank.name, logo: bank.logo, isActive: true, autoRates: bank.name !== 'Сбербанк', programs: [], history: [] });
+                                    setEditingBank({ 
+                                      id: Date.now().toString(), 
+                                      name: bank.name, 
+                                      logo: bank.logo, 
+                                      isActive: true, 
+                                      autoRates: !isSberbank(bank.name), 
+                                      programs: [], 
+                                      history: [] 
+                                    });
                                     setIsFormModalOpen(true);
                                 }} className={`px-3 py-2 text-[12px] flex items-center gap-2 cursor-pointer border-b last:border-0 ${isAlreadyAdded ? 'opacity-40 grayscale cursor-not-allowed' : 'text-slate-700 hover:bg-slate-50'}`}>
                                     {bank.logo ? <img src={bank.logo} className="w-6 h-6 object-contain" /> : <div className="w-6 h-6 bg-slate-100 rounded" />}
@@ -356,7 +372,7 @@ const App: React.FC = () => {
             {selectedBankIds.size > 0 && (
               <div className="flex items-center gap-2 animate-fade-in-up bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/20">
                 <span className="text-[10px] font-bold text-primary mr-1">Выбрано: {selectedBankIds.size}</span>
-                <Button variant="ghost" size="sm" onClick={() => handleMassStatusToggle(true)} className="h-7 px-2 text-[10px] font-bold"><CheckCircle size={12} className="mr-1" /> Активировать</Button>
+                <Button variant="ghost" size="sm" onClick={() => handleMassStatusToggle(true)} className="h-7 px-2 text-[10px] font-bold">Активировать</Button>
                 <Button variant="ghost" size="sm" onClick={() => handleMassStatusToggle(false)} className="h-7 px-2 text-[10px] font-bold text-slate-400">Деактивировать</Button>
                 <Button variant="ghost" size="sm" onClick={handleMassDelete} className="h-7 px-2 text-[10px] font-bold text-danger hover:bg-red-50"><Trash2 size={12} className="mr-1" /> Удалить</Button>
               </div>
