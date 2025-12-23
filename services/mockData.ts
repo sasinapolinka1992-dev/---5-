@@ -37,9 +37,9 @@ export const initialBanks: Bank[] = [
     id: '1',
     name: 'Сбербанк',
     logo: 'https://companieslogo.com/img/orig/SBER.ME-1004a469.png?t=1720244493',
-    description: 'Внутреннее описание Сбербанка.',
+    description: '',
     isActive: true,
-    autoRates: false,
+    autoRates: false, // У Сбербанка нет автоставок
     programs: [
       {
         id: 'p1',
@@ -52,7 +52,7 @@ export const initialBanks: Bank[] = [
         pskMax: 7.5,
         conditions: 'Программа для семей с детьми.',
         autoRates: false,
-        targetUnits: [],
+        targetUnits: {},
       }
     ],
   },
@@ -60,9 +60,9 @@ export const initialBanks: Bank[] = [
     id: '2',
     name: 'ВТБ',
     logo: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/VTB_Logo_2018_color.png',
-    description: 'Внутреннее описание ВТБ.',
+    description: '',
     isActive: true,
-    autoRates: false,
+    autoRates: true, // У ВТБ есть автоставки
     programs: [],
   }
 ];
