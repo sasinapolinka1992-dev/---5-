@@ -155,6 +155,7 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingBank, setEditingBank] = useState<Bank | null>(null);
+  const [initialModalTab, setInitialModalTab] = useState<'general' | 'programs'>('general');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [bankToDelete, setBankToDelete] = useState<Bank | null>(null);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
@@ -279,6 +280,7 @@ const App: React.FC = () => {
                                       programs: [], 
                                       history: [] 
                                     });
+                                    setInitialModalTab('programs'); // Открывать сразу на второй вкладке
                                     setIsFormModalOpen(true);
                                 }} className={`px-3 py-2 text-[12px] flex items-center gap-2 cursor-pointer border-b last:border-0 ${isAlreadyAdded ? 'opacity-40 grayscale cursor-not-allowed' : 'text-slate-700 hover:bg-slate-50'}`}>
                                     {bank.logo ? <img src={bank.logo} className="w-6 h-6 object-contain" /> : <div className="w-6 h-6 bg-slate-100 rounded" />}
@@ -374,7 +376,7 @@ const App: React.FC = () => {
                 <span className="text-[10px] font-bold text-primary mr-1">Выбрано: {selectedBankIds.size}</span>
                 <Button variant="ghost" size="sm" onClick={() => handleMassStatusToggle(true)} className="h-7 px-2 text-[10px] font-bold">Активировать</Button>
                 <Button variant="ghost" size="sm" onClick={() => handleMassStatusToggle(false)} className="h-7 px-2 text-[10px] font-bold text-slate-400">Деактивировать</Button>
-                <Button variant="ghost" size="sm" onClick={handleMassDelete} className="h-7 px-2 text-[10px] font-bold text-danger hover:bg-red-50"><Trash2 size={12} className="mr-1" /> Удалить</Button>
+                <Button variant="ghost" size="sm" onClick={handleMassDelete} className="h-7 px-2 text-[10px] font-bold text-danger hover:bg-red-50">Удалить</Button>
               </div>
             )}
           </div>
@@ -386,13 +388,21 @@ const App: React.FC = () => {
             selectedIds={selectedBankIds}
             onSelectAll={toggleSelectAll}
             onSelectBank={toggleSelectBank}
-            onEdit={(b) => { setEditingBank(b); setIsFormModalOpen(true); }} 
+            onEdit={(b) => { 
+                setEditingBank(b); 
+                setInitialModalTab('general'); // При редактировании открывать на первой вкладке
+                setIsFormModalOpen(true); 
+            }} 
             onDelete={(b) => { setBankToDelete(b); setIsDeleteModalOpen(true); }} 
             onToggleStatus={(bank, status) => {
               setBanks(prev => prev.map(b => b.id === bank.id ? { ...b, isActive: status } : b));
               addToast('success', `Статус банка "${bank.name}" обновлен`);
             }} 
-            onAddProgram={(b) => { setEditingBank(b); setIsFormModalOpen(true); }} 
+            onAddProgram={(b) => { 
+                setEditingBank(b); 
+                setInitialModalTab('programs'); // Кнопка "Добавить программу" в таблице тоже открывает вторую вкладку
+                setIsFormModalOpen(true); 
+            }} 
             onMove={(bank, dir) => {
               setBanks(prev => {
                   const i = prev.findIndex(b => b.id === bank.id);
@@ -425,14 +435,20 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <BankFormModal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} onSave={(saved) => {
+      <BankFormModal 
+        isOpen={isFormModalOpen} 
+        onClose={() => setIsFormModalOpen(false)} 
+        onSave={(saved) => {
           setBanks(prev => {
               const i = prev.findIndex(b => b.id === saved.id);
               if (i >= 0) { const n = [...prev]; n[i] = saved; return n; }
               return [saved, ...prev];
           });
           addToast('success', 'Изменения в данных банка сохранены');
-      }} initialData={editingBank} />
+        }} 
+        initialData={editingBank}
+        initialTab={initialModalTab}
+      />
 
       <ConfirmationModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={() => {
           setBanks(prev => prev.filter(b => b.id !== bankToDelete?.id));
